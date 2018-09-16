@@ -25,6 +25,10 @@
 
         $(document).ready(function () {
 
+            $(".button").on("click", function () {
+                $(this).next().toggle('fold', 300);
+            });
+
         })
 
     </script>
@@ -32,6 +36,7 @@
 </head>
 
 <body>
+
     <header class="row">
         <div class="col-6">
             <h1>Welcome {{ session["user"]["first_name"] }}!</h1>
@@ -44,10 +49,11 @@
 
     <form id="post" action="/post" method="post">
         <div class="form-group">
-            <label for="message"><h4>Post a Message:</h4></label>
+            <label for="message">
+                <h4>Post a Message:</h4>
+            </label>
             <textarea class="form-control" name="message" id="message" rows="5"></textarea>
         </div>
-
         {% with messages = get_flashed_messages(category_filter=["post"]) %}
         {% if messages %}
             {% for message in messages %}
@@ -55,26 +61,44 @@
             {% endfor %}
         {% endif %}
         {% endwith %}
-
         <input class="btn btn-primary" type="submit" value="Post to Wall">
     </form>
-
 
     <h2>Message Wall</h2>
 
     {% for i in range(session["messages_count"] -1, -1, -1) %}
-    <div class="message">
-        <h3>{{ session["messages"][i]["name"] }} <small>{{ session["messages"][i]["date"] }}</small></h3>
-        <div class="content">
-            <h6>{{ session["messages"][i]["message"] }}</h6>
-            <a class="btn btn-info" href="/like/view/">Toggle comment dropdown</a>
-            {% if session["messages"][i]["user_id"] == session["user_id"] %}
-                {% if session["messages"][i]["created_at"] > session["cutoff_time"] %}
-                    <a class="btn btn-danger" href="/delete/{{ session['messages'][i]['id'] }}">Delete</a>
+        <div class="message">
+            <h3>{{ session["messages"][i]["name"] }} <small>{{ session["messages"][i]["date"] }}</small></h3>
+            <div class="content">
+                <h6>{{ session["messages"][i]["message"] }}</h6>
+                <h5>Comments:</h5>
+                {% for comment in session["messages"][i]["comments"] %}
+                    <div class="comment">
+                        <h6>{{ comment["name"] }}: <small>{{ comment["date"] }}</small></h6>
+                        <h5> - {{ comment["comment"] }}</h5>
+                        {% if comment["user_id"] == session["user_id"] %}
+                            <a class="red" href="/delete/comment/{{ comment['id'] }}">Delete</a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                <button class="button btn btn-info">Write Comment</button>
+                <div class="toggler" style="display: none;">
+                    <div id="effect" class="ui-widget-content ui-corner-all">
+                        <form action="/add/comment" method="post">
+                            <textarea class="form-control" name="comment" rows="3"></textarea>
+                            <p class="">- {{ session["user"]["first_name"] }} {{ session["user"]["last_name"] }}</p>
+                            <input type="hidden" name="message_id" value="{{ session['messages'][i]['id'] }}">
+                            <input class="btn btn-primary" type="submit" value="Post comment">
+                        </form>
+                    </div>
+                </div>
+                {% if session["messages"][i]["user_id"] == session["user_id"] %}
+                    {% if session["messages"][i]["created_at"] > session["cutoff_time"] %}
+                        <a class="btn btn-danger" href="/delete/{{ session['messages'][i]['id'] }}">Delete</a>
+                    {% endif %}
                 {% endif %}
-            {% endif %}
+            </div>
         </div>
-    </div>
     {% endfor %}
 
 </body>

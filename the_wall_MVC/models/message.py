@@ -4,6 +4,18 @@ from the_wall_MVC import bcrypt
 
 class Message():
 
+    def add_comment(self):
+        myDb = connectToMySQL('walldb')
+        query = "INSERT INTO comments (message_id, user_id, comment, created_at, updated_at) VALUES (%(message_id)s, %(user_id)s, %(comment)s, now(), now());"
+        data = {
+            "message_id" : request.form["message_id"],
+            "user_id" : session["user_id"],
+            "comment" : request.form["comment"]
+        }
+        myDb.query_db(query, data)
+        return
+
+
     def add_user(self):
         myDb = connectToMySQL('walldb')
         query = "INSERT INTO users (first_name, last_name, email, password, created_at, updated_at) VALUES (%(first_name)s, %(last_name)s, %(email)s, %(password)s, now(), now());"
@@ -27,6 +39,20 @@ class Message():
         return False
 
 
+    def delete(self, id):
+        myDb = connectToMySQL('walldb')
+        myDb.query_db("DELETE FROM messages WHERE id = %s;" % (id))
+        return
+
+
+    def delete_comment(self, comment_id):
+
+        myDb = connectToMySQL('walldb')
+        myDb.query_db("DELETE FROM comments WHERE id = %s;" % (comment_id))
+
+        return
+
+
     def getInfo(self):
         myDb = connectToMySQL('walldb')
         query = "SELECT first_name, last_name, email, created_at FROM users WHERE id = %(id)s;"
@@ -34,8 +60,12 @@ class Message():
             "id" : session["user_id"]
         }
         user_info = myDb.query_db(query, data)
-        messages = myDb.query_db("SELECT messages.id, user_id, message, messages.created_at, CONCAT(first_name, ' ', last_name) AS name FROM messages JOIN users ON messages.user_id = users.id;")
-        return [user_info, messages]
+        posts = myDb.query_db("SELECT messages.id, user_id, message, messages.created_at, CONCAT(first_name, ' ', last_name) AS name FROM messages JOIN users ON messages.user_id = users.id;")
+
+        for post in posts:
+            post["comments"] = myDb.query_db("SELECT comments.*, CONCAT(first_name, ' ', last_name) AS name FROM comments JOIN users ON comments.user_id = users.id WHERE message_id = %s" % (post["id"]))
+        
+        return [user_info, posts]
 
 
     def logIn(self):
@@ -60,10 +90,4 @@ class Message():
             "message" : request.form["message"]
         }
         myDb.query_db(query, data)
-        return
-
-
-    def delete(self, id):
-        myDb = connectToMySQL('walldb')
-        myDb.query_db("DELETE FROM messages WHERE id = %s;" % (id))
         return

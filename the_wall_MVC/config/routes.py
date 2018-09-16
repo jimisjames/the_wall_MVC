@@ -10,16 +10,28 @@ def home():
     return messages.home()
 
 
+@app.route("/add/comment", methods=["POST"])
+def addComment():
+
+    return messages.add_comment()
+
+
 @app.route("/dashboard")
 def dashboard():
 
     return messages.dashboard()
 
 
-@app.route("/reg", methods=["POST"])
-def reg():
+@app.route("/delete/<id>")
+def delete(id):
 
-    return messages.reg()
+    return messages.delete(id)
+
+
+@app.route("/delete/comment/<comment_id>")
+def deleteComment(comment_id):
+
+    return messages.delete_comment(comment_id)
 
 
 @app.route("/login", methods=["POST"])
@@ -40,7 +52,7 @@ def post():
     return messages.post()
 
 
-@app.route("/delete/<id>")
-def delete(id):
+@app.route("/reg", methods=["POST"])
+def reg():
 
-    return messages.delete(id)
+    return messages.reg()

@@ -10,10 +10,12 @@ message = Message()
 
 class Messages():
 
-    def home(self):
-        session.pop("user_id", None)
-        session.pop("secret_hash", None)
-        return render_template("index.html")
+    def add_comment(self):
+
+        if len(request.form["comment"]) < 1:
+            return redirect("/dashboard")
+        message.add_comment()
+        return redirect("/dashboard")
 
 
     def dashboard(self):
@@ -25,8 +27,10 @@ class Messages():
 
             info = message.getInfo()
             session["messages"] = info[1]
-            for x in session["messages"]:
-                x["date"] = datetime.strftime(x["created_at"],'%B %d, %Y')
+            for post in session["messages"]:
+                post["date"] = datetime.strftime(post["created_at"],'%B %d, %Y')
+                for comment in post["comments"]:
+                    comment["date"] = datetime.strftime(comment["created_at"],'%B %d, %Y')
             session["messages_count"] = len(session["messages"])
             session["user"] = info[0][0]
             session["cutoff_time"] = datetime.now() - timedelta(minutes=30)
@@ -37,6 +41,54 @@ class Messages():
                 flash("Don't hack my site you jerk", "login")
                 return redirect("/") #failure
         return render_template("index.html")
+
+
+    def delete(self, id):
+
+        message.delete(id)
+        return redirect("/dashboard")
+
+
+    def delete_comment(self, comment_id):
+
+        message.delete_comment(comment_id)
+        return redirect("/dashboard")
+
+
+    def home(self):
+
+        session.pop("user_id", None)
+        session.pop("secret_hash", None)
+        return render_template("index.html")
+
+
+    def logIn(self):
+
+        user = message.logIn()
+        if user:
+            session["user_id"] = user["id"]
+            session["secret_hash"] = bcrypt.generate_password_hash(str(user["created_at"]) + "melon")
+            return redirect("/dashboard")#success
+
+        session["email2"] = request.form["email"]
+        flash("Incorrect email or password", "login")
+        return redirect("/")#failure
+
+
+    def logOut(self):
+
+        session.clear()
+        return redirect("/")
+
+
+    def post(self):
+
+        if len(request.form["message"]) < 1:
+            flash("Please enter a message to post", "post")
+            return redirect("/dashboard")
+
+        message.post()
+        return redirect("/dashboard")
 
 
     def reg(self):
@@ -72,11 +124,11 @@ class Messages():
             flash("Your password must match", "password")
             flash("Your password must match", "confirm_password")
 
-        today = datetime.datetime.now()
+        today = datetime.now()
 
         if len(request.form["birth"]) < 2:
             flash("Please enter your date of birth", "birth")
-        elif datetime.datetime.strptime(request.form["birth"], "%m/%d/%Y").year > today.year - 18:
+        elif datetime.strptime(request.form["birth"], "%m/%d/%Y").year > today.year - 18:
             flash("Sorry you must be 18 to use this site", "birth")
 
         if "_flashes" in session.keys():
@@ -91,38 +143,3 @@ class Messages():
             created_at = userIdCreated[1]
             session["secret_hash"] = bcrypt.generate_password_hash(str(created_at) + "melon")
             return redirect("/dashboard") #success
-
-
-    def logIn(self):
-
-        user = message.logIn()
-        if user:
-            session["user_id"] = user["id"]
-            session["secret_hash"] = bcrypt.generate_password_hash(str(user["created_at"]) + "melon")
-            return redirect("/dashboard")#success
-
-        session["email2"] = request.form["email"]
-        flash("Incorrect email or password", "login")
-        return redirect("/")#failure
-
-
-    def logOut(self):
-
-        session.clear()
-        return redirect("/")
-
-
-    def post(self):
-
-        if len(request.form["message"]) < 1:
-            flash("Please enter a message to post", "post")
-            return redirect("/dashboard")
-
-        message.post()
-        return redirect("/dashboard")
-
-
-    def delete(self, id):
-
-        message.delete(id)
-        return redirect("/dashboard")
